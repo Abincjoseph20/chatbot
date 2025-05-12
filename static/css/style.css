@@ -72,15 +72,17 @@ body {
     padding: 0 8px;
 }
 
+/* Updated Chat History Styles */
 .history-item {
     padding: 12px;
     margin: 4px 0;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    white-space: normal;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: background-color 0.2s ease;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -92,7 +94,8 @@ body {
 }
 
 .history-item.active {
-    background-color: #3E3F4B;
+    background-color: var(--message-bg);
+    font-weight: 500;
 }
 
 .sidebar-footer {
@@ -401,21 +404,39 @@ input[type="text"]:focus {
     margin-left: auto;
 }
 
-/* Error message styling */
+/* Loading States */
+.loading-indicator {
+    display: none;
+    padding: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.loading-indicator.visible {
+    display: block;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+    width: 20px;
+    height: 20px;
+}
+
+/* Error Handling */
 .error-message {
-    color: var(--error-color);
-    background-color: rgba(255, 107, 107, 0.1);
-    padding: 8px 12px;
-    border-radius: 4px;
-    margin-top: 8px;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--error-color);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     display: none;
 }
 
-/* Loading spinner */
-.spinner {
-    animation: spin 1s linear infinite;
-}
-
+/* Typing indicator */
 .typing-indicator {
     display: flex;
     padding: 8px 0;
@@ -496,15 +517,9 @@ input[type="text"]:focus {
     background-color: #16a570;
 }
 
-.error-message {
-    margin-top: 16px;
-    color: var(--error-color);
-    text-align: center;
-}
-
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 @keyframes pulse {
@@ -559,5 +574,11 @@ input[type="text"]:focus {
     .history-item {
         padding: 10px;
         font-size: 13px;
+    }
+    
+    .error-message {
+        bottom: 80px;
+        right: 10px;
+        left: 10px;
     }
 }

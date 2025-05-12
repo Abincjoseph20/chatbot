@@ -15,19 +15,20 @@ function getCookie(name) {
 }
 
 // DOM elements
-const fileUploadBtn = document.getElementById('file-upload-btn');
+const chatContainer = document.getElementById('chat-container');
+const chatForm = document.getElementById('chat-form');
+const questionInput = document.getElementById('question');
 const fileInput = document.getElementById('file-input');
+const fileUploadBtn = document.getElementById('file-upload-btn');
 const filePreviewContainer = document.getElementById('file-preview-container');
 const errorContainer = document.getElementById('error-container');
 const submitBtn = document.getElementById('submit-btn');
-const questionInput = document.getElementById('question');
-const chatForm = document.getElementById('chat-form');
-const chatContainer = document.getElementById('chat-container');
-const voiceInputBtn = document.getElementById('voice-input-btn');
-const speakerBtn = document.getElementById('speaker-btn');
-const historyItems = document.querySelectorAll('.history-item');
 const newChatBtn = document.getElementById('new-chat-btn');
 const sidebar = document.getElementById('sidebar');
+const historyContainer = document.getElementById('history-container');
+const activeSessionIdInput = document.getElementById('active-session-id');
+const voiceInputBtn = document.getElementById('voice-input-btn');
+const speakerBtn = document.getElementById('speaker-btn');
 const openSidebarBtn = document.getElementById('open-sidebar');
 const closeSidebarBtn = document.getElementById('close-sidebar');
 const userProfile = document.querySelector('.user-profile');
@@ -41,8 +42,47 @@ let speechSynthesis = window.speechSynthesis || null;
 const isSpeechSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 const isSynthesisSupported = 'speechSynthesis' in window;
 
-// Initialize speech recognition if supported
-if (isSpeechSupported) {
+// SVG templates
+const userAvatarSVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+    <circle cx="12" cy="7" r="4"></circle>
+</svg>`;
+
+const botAvatarSVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
+    <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
+    <path d="M8 16l-2-2 2-2"></path>
+    <path d="M16 16l2-2-2-2"></path>
+</svg>`;
+
+const speakerSVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+</svg>`;
+
+// State management
+let activeSessionId = activeSessionIdInput.value || null;
+
+// Initialize chat and speech recognition
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadSessions();
+    if (activeSessionId) {
+        await loadSessionMessages(activeSessionId);
+    }
+
+    if (isSpeechSupported) {
+        initializeSpeechRecognition();
+    } else {
+        voiceInputBtn.style.display = 'none';
+    }
+
+    if (!isSynthesisSupported) {
+        speakerBtn.style.display = 'none';
+    }
+});
+
+// Initialize speech recognition
+function initializeSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.continuous = false;
@@ -72,33 +112,195 @@ if (isSpeechSupported) {
             questionInput.placeholder = 'Message Thara Chat...';
         }
     };
-} else {
-    voiceInputBtn.style.display = 'none';
-}
-
-// Initialize text-to-speech if supported
-if (!isSynthesisSupported) {
-    speakerBtn.style.display = 'none';
-    document.querySelectorAll('.message-speaker').forEach(btn => {
-        btn.style.display = 'none';
-    });
 }
 
 // Show error message
 function showError(message) {
-    errorContainer.textContent = message;
-    errorContainer.style.display = 'block';
-    setTimeout(() => {
-        errorContainer.style.display = 'none';
-    }, 5000);
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 5000);
 }
 
-// Toggle submit button active state based on input
-questionInput.addEventListener('input', function() {
-    if (this.value.trim() || fileInput.files.length > 0) {
-        submitBtn.classList.add('active');
-    } else {
-        submitBtn.classList.remove('active');
+// Load all sessions
+async function loadSessions() {
+    try {
+        const response = await fetch('/get-sessions/');
+        const data = await response.json();
+        
+        historyContainer.innerHTML = '';
+        data.sessions.forEach(session => {
+            const sessionItem = document.createElement('div');
+            sessionItem.className = `history-item ${session.id === activeSessionId ? 'active' : ''}`;
+            sessionItem.dataset.sessionId = session.id;
+            sessionItem.textContent = session.title;
+            sessionItem.addEventListener('click', handleSessionClick);
+            historyContainer.appendChild(sessionItem);
+        });
+    } catch (error) {
+        showError('Failed to load chat history');
+    }
+}
+
+// Handle session click
+async function handleSessionClick() {
+    const sessionId = this.dataset.sessionId;
+    activeSessionId = sessionId;
+    activeSessionIdInput.value = sessionId;
+    
+    await loadSessionMessages(sessionId);
+    document.querySelectorAll('.history-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    this.classList.add('active');
+}
+
+// Load messages for a session
+async function loadSessionMessages(sessionId) {
+    try {
+        const response = await fetch(`/get-messages/${sessionId}/`);
+        const data = await response.json();
+        
+        chatContainer.innerHTML = '';
+        data.messages.forEach(msg => {
+            addMessageToChat(msg.user_query, 'user');
+            addMessageToChat(msg.bot_response, 'bot');
+        });
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    } catch (error) {
+        showError('Failed to load messages');
+    }
+}
+
+// Add message to chat UI
+function addMessageToChat(content, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    messageDiv.innerHTML = `
+        <div class="message-avatar ${sender}-avatar">
+            ${sender === 'user' ? userAvatarSVG : botAvatarSVG}
+        </div>
+        <div class="message-content">
+            <p>${content}</p>
+            ${sender === 'bot' ? `
+                <button class="message-speaker" data-message="${content}">
+                    ${speakerSVG}
+                </button>
+            ` : ''}
+        </div>
+    `;
+    chatContainer.appendChild(messageDiv);
+}
+
+// Create typing indicator element
+function createTypingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'message';
+    div.innerHTML = `
+        <div class="message-avatar bot-avatar">
+            ${botAvatarSVG}
+        </div>
+        <div class="message-content">
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+// Handle form submission
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const question = questionInput.value.trim();
+    const file = fileInput.files[0];
+
+    if (!question && !file) {
+        showError('Please enter a question or upload a file');
+        return;
+    }
+
+    // Add loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<div class="spinner"></div>`;
+
+    // Add user message to UI immediately
+    if (question) addMessageToChat(question, 'user');
+    if (file) addMessageToChat(`Uploaded file: ${file.name}`, 'user');
+
+    // Add typing indicator
+    const typingIndicator = createTypingIndicator();
+    chatContainer.appendChild(typingIndicator);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    // Prepare form data
+    formData.append('session_id', activeSessionId);
+    if (question) formData.append('question', question);
+    if (file) formData.append('document', file);
+
+    try {
+        const response = await fetch('/chat/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            }
+        });
+
+        if (!response.ok) throw new Error('Request failed');
+        
+        const data = await response.json();
+        typingIndicator.remove();
+
+        // Update session title if changed
+        if (data.session_title) {
+            const activeSessionItem = document.querySelector(`.history-item[data-session-id="${activeSessionId}"]`);
+            if (activeSessionItem) {
+                activeSessionItem.textContent = data.session_title;
+            }
+        }
+
+        // Add bot response
+        addMessageToChat(data.response, 'bot');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    } catch (error) {
+        showError(error.message);
+        typingIndicator.remove();
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `Send`;
+        questionInput.value = '';
+        fileInput.value = '';
+        filePreviewContainer.innerHTML = '';
+    }
+});
+
+// Handle new chat creation
+newChatBtn.addEventListener('click', async () => {
+    try {
+        const response = await fetch('/new-session/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        if (data.session_id) {
+            activeSessionId = data.session_id;
+            activeSessionIdInput.value = data.session_id;
+            chatContainer.innerHTML = '';
+            await loadSessions();
+        }
+    } catch (error) {
+        showError('Failed to create new session');
     }
 });
 
@@ -236,14 +438,15 @@ speakerBtn.addEventListener('click', function() {
     }
 });
 
-document.addEventListener('click', function(e) {
+// Speaker functionality for individual messages
+document.addEventListener('click', (e) => {
     if (e.target.closest('.message-speaker')) {
         const message = e.target.closest('.message-speaker').dataset.message;
         speakMessage(message);
     }
 });
 
-// Function to speak a message
+// Text-to-speech
 function speakMessage(message) {
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
@@ -257,247 +460,6 @@ function speakMessage(message) {
     speechSynthesis.speak(utterance);
 }
 
-// Handle form submission
-chatForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData();
-    const question = questionInput.value.trim();
-    const file = fileInput.files[0];
-    
-    // Validate at least one input
-    if (!question && !file) {
-        showError('Please enter a question or upload a file');
-        return;
-    }
-
-    // Add loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `<svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-    </svg>`;
-
-    // First add the user's message to the chat
-    if (question) {
-        const userMessage = document.createElement('div');
-        userMessage.className = 'message';
-        userMessage.innerHTML = `
-            <div class="message-avatar user-avatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-            </div>
-            <div class="message-content">
-                <p>${question}</p>
-            </div>
-        `;
-        chatContainer.appendChild(userMessage);
-    }
-
-    if (file) {
-        const fileMessage = document.createElement('div');
-        fileMessage.className = 'message';
-        fileMessage.innerHTML = `
-            <div class="message-avatar user-avatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-            </div>
-            <div class="message-content">
-                <p>Uploaded file: ${file.name}</p>
-            </div>
-        `;
-        chatContainer.appendChild(fileMessage);
-    }
-
-    // Add typing indicator
-    const typingIndicator = document.createElement('div');
-    typingIndicator.className = 'message';
-    typingIndicator.innerHTML = `
-        <div class="message-avatar bot-avatar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
-                <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
-                <path d="M8 16l-2-2 2-2"></path>
-                <path d="M16 16l2-2-2-2"></path>
-            </svg>
-        </div>
-        <div class="message-content">
-            <div class="typing-indicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-            </div>
-        </div>
-    `;
-    chatContainer.appendChild(typingIndicator);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-
-    // Prepare form data
-    if (question) formData.append('question', question);
-    if (file) formData.append('document', file);
-
-    try {
-        const response = await fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Request failed');
-        }
-
-        const data = await response.json();
-        
-        // Remove typing indicator
-        const typingIndicators = document.querySelectorAll('.typing-indicator');
-        typingIndicators.forEach(indicator => {
-            indicator.closest('.message').remove();
-        });
-        
-        if (data.response) {
-            // Add the bot's response to the chat
-            const botMessage = document.createElement('div');
-            botMessage.className = 'message';
-            botMessage.innerHTML = `
-                <div class="message-avatar bot-avatar">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
-                        <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
-                        <path d="M8 16l-2-2 2-2"></path>
-                        <path d="M16 16l2-2-2-2"></path>
-                    </svg>
-                </div>
-                <div class="message-content">
-                    <p>${data.response}</p>
-                    <button class="message-speaker" data-message="${data.response}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                        </svg>
-                    </button>
-                </div>
-            `;
-            chatContainer.appendChild(botMessage);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            // Update history in sidebar
-            updateChatHistory(question || `Uploaded file: ${file.name}`, data.response);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showError(error.message || 'Could not get a response from the server');
-        
-        // Remove typing indicator on error
-        const typingIndicators = document.querySelectorAll('.typing-indicator');
-        typingIndicators.forEach(indicator => {
-            indicator.closest('.message').remove();
-        });
-    } finally {
-        // Reset form and button state
-        questionInput.value = '';
-        fileInput.value = '';
-        filePreviewContainer.innerHTML = '';
-        submitBtn.classList.remove('active');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>`;
-    }
-});
-
-// Update chat history in sidebar
-function updateChatHistory(query, response) {
-    const historyContainer = document.getElementById('history-container');
-    const historyItem = document.createElement('div');
-    historyItem.className = 'history-item active';
-    historyItem.dataset.query = query;
-    historyItem.dataset.response = response;
-    historyItem.textContent = query.length > 30 ? query.substring(0, 27) + '...' : query;
-    
-    // Remove active class from all items
-    document.querySelectorAll('.history-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Add new item at the top
-    historyContainer.insertBefore(historyItem, historyContainer.firstChild);
-    
-    // Add click handler to new item
-    historyItem.addEventListener('click', loadHistoryItem);
-}
-
-// Load history item into chat
-function loadHistoryItem() {
-    const query = this.dataset.query;
-    const response = this.dataset.response;
-    
-    // Clear current chat
-    while (chatContainer.children.length > 0) {
-        chatContainer.removeChild(chatContainer.lastChild);
-    }
-    
-    // Add the selected conversation
-    const userMessage = document.createElement('div');
-    userMessage.className = 'message';
-    userMessage.innerHTML = `
-        <div class="message-avatar user-avatar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-        </div>
-        <div class="message-content">
-            <p>${query}</p>
-        </div>
-    `;
-    chatContainer.appendChild(userMessage);
-    
-    const botMessage = document.createElement('div');
-    botMessage.className = 'message';
-    botMessage.innerHTML = `
-        <div class="message-avatar bot-avatar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
-                <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
-                <path d="M8 16l-2-2 2-2"></path>
-                <path d="M16 16l2-2-2-2"></path>
-            </svg>
-        </div>
-        <div class="message-content">
-            <p>${response}</p>
-            <button class="message-speaker" data-message="${response}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                </svg>
-            </button>
-        </div>
-    `;
-    chatContainer.appendChild(botMessage);
-    
-    // Update active state
-    document.querySelectorAll('.history-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    this.classList.add('active');
-    
-    // Update title
-    document.querySelector('.chat-title').textContent = 'Chat History';
-    
-    // Scroll to bottom
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
 // Sidebar toggle functionality
 openSidebarBtn.addEventListener('click', function() {
     sidebar.classList.add('visible');
@@ -507,34 +469,23 @@ closeSidebarBtn.addEventListener('click', function() {
     sidebar.classList.remove('visible');
 });
 
-// New chat button functionality
-newChatBtn.addEventListener('click', function() {
-    // Clear the chat container except for the first welcome message
-    while (chatContainer.children.length > 1) {
-        chatContainer.removeChild(chatContainer.lastChild);
+// Handle window resize for mobile sidebar
+window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) {
+        sidebar.classList.remove('visible');
     }
-    
-    // Clear the form
-    questionInput.value = '';
-    fileInput.value = '';
-    filePreviewContainer.innerHTML = '';
-    submitBtn.classList.remove('active');
-    
-    // Remove active state from history items
-    document.querySelectorAll('.history-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Update title
-    document.querySelector('.chat-title').textContent = 'New Chat';
 });
 
-// Add click handlers to existing history items
-historyItems.forEach(item => {
-    item.addEventListener('click', loadHistoryItem);
+// Toggle submit button active state based on input
+questionInput.addEventListener('input', function() {
+    if (this.value.trim() || fileInput.files.length > 0) {
+        submitBtn.classList.add('active');
+    } else {
+        submitBtn.classList.remove('active');
+    }
 });
 
-// Handle profile click (can be expanded for dropdown)
+// Handle profile click
 if (userProfile) {
     userProfile.addEventListener('click', function(e) {
         // Prevent triggering if clicking on login/logout link
@@ -544,10 +495,3 @@ if (userProfile) {
         console.log('Profile clicked');
     });
 }
-
-// Handle window resize for mobile sidebar
-window.addEventListener('resize', function() {
-    if (window.innerWidth > 768) {
-        sidebar.classList.remove('visible');
-    }
-});

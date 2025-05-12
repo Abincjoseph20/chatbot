@@ -1,0 +1,152 @@
+{% block head %}
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #e9ecef;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.loginForm {
+    background-color: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+}
+
+.profileImage {
+    margin-bottom: 15px;
+}
+
+.profileImage .fa-user-circle-o {
+    font-size: 70px;
+    color: #6c757d;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.form-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #adb5bd;
+    font-size: 16px;
+}
+
+.form-control {
+    padding-left: 35px;
+    height: 40px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+}
+
+.form-control:focus {
+    border-color: #495057;
+    background-color: #f1f3f5;
+    outline: none;
+}
+
+.btn-default {
+    background-color: #6c757d;
+    color: #ffffff;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-default:hover {
+    background-color: #495057;
+}
+
+.text-center {
+    font-size: 13px;
+    color: #6c757d;
+    margin-top: 12px;
+}
+
+.text-center a {
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.text-center a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 576px) {
+    .loginForm {
+        padding: 15px;
+        max-width: 90%;
+    }
+    .profileImage .fa-user-circle-o {
+        font-size: 50px;
+    }
+    .form-control {
+        height: 36px;
+        font-size: 13px;
+    }
+    .btn-default {
+        padding: 8px;
+        font-size: 13px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <form method="post" class="loginForm">
+        {% csrf_token %}
+        
+        <div class="profileImage">
+            <i class="fa fa-user-circle-o" aria-hidden="true"></i>
+        </div>
+
+        <div class="form-group">
+            <i class="fa fa-user form-icon"></i>
+            <input type="text" class="form-control" name="username" placeholder="Username" required>
+        </div>
+
+        <div class="form-group">
+            <i class="fa fa-envelope form-icon"></i>
+            <input type="email" class="form-control" name="email" placeholder="Email" required>
+        </div>
+
+        <div class="form-group">
+            <i class="fa fa-phone form-icon"></i>
+            <input type="text" class="form-control" name="phone" placeholder="Phone">
+        </div>
+
+        <div class="form-group">
+            <i class="fa fa-lock form-icon"></i>
+            <input type="password" class="form-control" name="password1" placeholder="Password" required>
+        </div>
+
+        <div class="form-group">
+            <i class="fa fa-lock form-icon"></i>
+            <input type="password" class="form-control" name="password2" placeholder="Confirm Password" required>
+        </div>
+
+        <button type="submit" class="btn btn-default">Register</button>
+        
+        <div class="text-center">
+            <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+        </div>
+    </form>
+</div>
+{% endblock %}

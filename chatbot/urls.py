@@ -17,6 +17,8 @@ urlpatterns = [
     path('register', views.register_view, name='register'),
     path('', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-
+    
+    path('get-sessions/', views.get_sessions, name='get_sessions'),
+    path('get-messages/<int:session_id>/', views.get_messages, name='get_messages'),
 
 ]

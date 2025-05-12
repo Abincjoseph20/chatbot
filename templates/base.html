@@ -6,213 +6,216 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-     <!-- Sidebar -->
-      <div class="sidebar" id="sidebar">
+    <!-- Hidden input for active session ID -->
+    <input type="hidden" id="active-session-id" value="{{ active_session.id }}">
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <button class="new-chat-btn" id="new-chat-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            New chat
-          </button>
-          <button class="sidebar-toggle" id="close-sidebar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+            <button class="new-chat-btn" id="new-chat-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New chat
+            </button>
+            <button class="sidebar-toggle" id="close-sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
         </div>
         
         <div class="history-container" id="history-container">
-          {% for session in sessions %}
-            <div class="history-item {% if session.id == active_session.id %}active{% endif %}" 
-                 data-session-id="{{ session.id }}">
-              <div class="session-title">{{ session.title }}</div>
-              <div class="session-time">{{ session.updated_at|date:"M d, H:i" }}</div>
-              <button class="delete-session-btn" data-session-id="{{ session.id }}">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-          {% empty %}
-            <div class="history-item">No conversations yet</div>
-          {% endfor %}
+            {% for session in sessions %}
+                <div class="history-item {% if session.id == active_session.id %}active{% endif %}" 
+                     data-session-id="{{ session.id }}">
+                    <div class="session-title">{{ session.title }}</div>
+                    <div class="session-time">{{ session.updated_at|date:"M d, H:i" }}</div>
+                    <button class="delete-session-btn" data-session-id="{{ session.id }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            {% empty %}
+                <div class="history-item">No conversations yet</div>
+            {% endfor %}
         </div>
         
         <div class="sidebar-footer">
-          <div class="user-profile">
-            <div class="user-avatar">{{ user.username|first|upper }}</div>
-            <div class="user-details">
-              <span class="username">{{ user.username }}</span>
-              <div class="user-actions">
-                <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
-              </div>
+            <div class="user-profile">
+                <div class="user-avatar">{{ user.username|first|upper }}</div>
+                <div class="user-details">
+                    <span class="username">{{ user.username }}</span>
+                    <div class="user-actions">
+                        <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
+    </div>
     
-      <!-- Main Content -->
-      <div class="main-content">
+    <!-- Main Content -->
+    <div class="main-content">
         <div class="chat-header">
-          <button class="sidebar-toggle" id="open-sidebar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
-          <div class="chat-title">{{ active_session.title }}</div>
+            <button class="sidebar-toggle" id="open-sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="chat-title">{{ active_session.title }}</div>
         </div>
         
         <div class="chat-container" id="chat-container">
-          {% if not messages %}
-            <div class="message">
-              <div class="message-avatar bot-avatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
-                  <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
-                  <path d="M8 16l-2-2 2-2"></path>
-                  <path d="M16 16l2-2-2-2"></path>
-                </svg>
-              </div>
-              <div class="message-content">
-                <p>Hello! I'm Thara Chat. How can I help you today?</p>
-              </div>
-            </div>
-          {% endif %}
-          
-          {% for message in messages %}
-            <div class="message">
-              <div class="message-avatar user-avatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </div>
-              <div class="message-content">
-                <p>{{ message.user_query }}</p>
-              </div>
-            </div>
+            {% if not messages %}
+                <div class="message">
+                    <div class="message-avatar bot-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
+                            <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
+                            <path d="M8 16l-2-2 2-2"></path>
+                            <path d="M16 16l2-2-2-2"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>Hello! I'm Thara Chat. How can I help you today?</p>
+                    </div>
+                </div>
+            {% endif %}
             
-            <div class="message">
-              <div class="message-avatar bot-avatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
-                  <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
-                  <path d="M8 16l-2-2 2-2"></path>
-                  <path d="M16 16l2-2-2-2"></path>
-                </svg>
-              </div>
-              <div class="message-content">
-                <p>{{ message.bot_response }}</p>
-                <button class="message-speaker" data-message="{{ message.bot_response }}">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          {% endfor %}
-          
-          {% if response %}
-            <div class="message">
-              <div class="message-avatar user-avatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </div>
-              <div class="message-content">
-                <p>{{ question }}</p>
-              </div>
-            </div>
+            {% for message in messages %}
+                <div class="message">
+                    <div class="message-avatar user-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ message.user_query }}</p>
+                    </div>
+                </div>
+                
+                <div class="message">
+                    <div class="message-avatar bot-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
+                            <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
+                            <path d="M8 16l-2-2 2-2"></path>
+                            <path d="M16 16l2-2-2-2"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ message.bot_response }}</p>
+                        <button class="message-speaker" data-message="{{ message.bot_response }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
             
-            <div class="message">
-              <div class="message-avatar bot-avatar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
-                  <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
-                  <path d="M8 16l-2-2 2-2"></path>
-                  <path d="M16 16l2-2-2-2"></path>
-                </svg>
-              </div>
-              <div class="message-content">
-                <p>{{ response }}</p>
-                <button class="message-speaker" data-message="{{ response }}">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          {% endif %}
+            {% if response %}
+                <div class="message">
+                    <div class="message-avatar user-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ question }}</p>
+                    </div>
+                </div>
+                
+                <div class="message">
+                    <div class="message-avatar bot-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
+                            <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
+                            <path d="M8 16l-2-2 2-2"></path>
+                            <path d="M16 16l2-2-2-2"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ response }}</p>
+                        <button class="message-speaker" data-message="{{ response }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
         </div>
         
         <div class="input-area">
-          <div class="input-container">
-            <form id="chat-form" class="chat-form" method="POST" action="{% url 'chat' %}" enctype="multipart/form-data">
-              {% csrf_token %}
-              <button type="button" class="file-upload-btn" id="file-upload-btn" title="Upload file">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-              </button>
-              <button type="button" class="voice-input-btn" id="voice-input-btn" title="Voice input">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                  <line x1="12" y1="19" x2="12" y2="23"></line>
-                  <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-              </button>
-              <button type="button" class="speaker-btn" id="speaker-btn" title="Read last message">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                  <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                </svg>
-              </button>
-              <input type="text" id="question" name="question" placeholder="Message Thara Chat..." autocomplete="off" value="{% if question %}{{ question }}{% endif %}" />
-              <input type="file" id="file-input" name="document" style="display: none;" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.csv,.png,.jpg,.jpeg,.gif,.bmp" />
-              <button type="submit" class="submit-btn" id="submit-btn" title="Send message">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-              </button>
-            </form>
-            
-            <div id="file-preview-container"></div>
-            <div id="error-container" class="error-message"></div>
-            
-            <div class="action-buttons">
-              <button class="action-btn" id="search-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                Search
-              </button>
-              <button class="action-btn" id="deep-think-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                Deep Think
-              </button>
+            <div class="input-container">
+                <form id="chat-form" class="chat-form" method="POST" action="{% url 'chat' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <button type="button" class="file-upload-btn" id="file-upload-btn" title="Upload file">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="voice-input-btn" id="voice-input-btn" title="Voice input">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="speaker-btn" id="speaker-btn" title="Read last message">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                        </svg>
+                    </button>
+                    <input type="text" id="question" name="question" placeholder="Message Thara Chat..." autocomplete="off" value="{% if question %}{{ question }}{% endif %}" />
+                    <input type="file" id="file-input" name="document" style="display: none;" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.csv,.png,.jpg,.jpeg,.gif,.bmp" />
+                    <button type="submit" class="submit-btn" id="submit-btn" title="Send message">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+                
+                <div id="file-preview-container"></div>
+                <div id="error-container" class="error-message"></div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" id="search-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Search
+                    </button>
+                    <button class="action-btn" id="deep-think-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        Deep Think
+                    </button>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
+    </div>
     
-      <script src="{% static 'js/scripts.js' %}"></script>
+    <script src="{% static 'js/scripts.js' %}"></script>
 </body>
 </html>
