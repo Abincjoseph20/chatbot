@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Thara Chat</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <!-- Hidden input for active session ID -->
+    <input type="hidden" id="active-session-id" value="{{ active_session.id }}">
+    <!-- Sidebar -->
+      {% include "front-end/sidebar.html" %}
+    <!-- Main Content -->
+    <div class="main-content">
+      {% include "front-end/chat-header.html" %}
+        
+      {% include "front-end/chat-container.html" %}
+        
+      {% include "front-end/input-area.html" %}
+    </div>
+    <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

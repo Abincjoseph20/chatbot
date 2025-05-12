@@ -148,7 +148,7 @@ def chat_view(request):
             return JsonResponse({"error": "An error occurred"}, status=500)
         messages.error(request, "An error occurred during processing")
 
-    return render(request, 'base.html', {
+    return render(request, 'base1.html', {
         "active_session": active_session,
         "sessions": sessions,
         "messages": messages,

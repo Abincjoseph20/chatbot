@@ -1,0 +1,85 @@
+<div class="chat-container" id="chat-container">
+            {% if not messages %}
+                <div class="message">
+                    <div class="message-avatar bot-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
+                            <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
+                            <path d="M8 16l-2-2 2-2"></path>
+                            <path d="M16 16l2-2-2-2"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>Hello! I'm Thara Chat. How can I help you today?</p>
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% for message in messages %}
+                <div class="message">
+                    <div class="message-avatar user-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ message.user_query }}</p>
+                    </div>
+                </div>
+                
+                <div class="message">
+                    <div class="message-avatar bot-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
+                            <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
+                            <path d="M8 16l-2-2 2-2"></path>
+                            <path d="M16 16l2-2-2-2"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ message.bot_response }}</p>
+                        <button class="message-speaker" data-message="{{ message.bot_response }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+            
+            {% if response %}
+                <div class="message">
+                    <div class="message-avatar user-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ question }}</p>
+                    </div>
+                </div>
+                
+                <div class="message">
+                    <div class="message-avatar bot-avatar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-7.743 16.33"></path>
+                            <path d="M12 2a10 10 0 0 1 7.743 16.33"></path>
+                            <path d="M8 16l-2-2 2-2"></path>
+                            <path d="M16 16l2-2-2-2"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ response }}</p>
+                        <button class="message-speaker" data-message="{{ response }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
