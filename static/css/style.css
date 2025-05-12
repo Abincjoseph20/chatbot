@@ -9,6 +9,7 @@
     --text-color: #ECECF1;
     --text-secondary: #8E8EA0;
     --error-color: #ff6b6b;
+    --edit-highlight: rgba(0, 123, 255, 0.25);
 }
 
 * {
@@ -72,9 +73,10 @@ body {
     padding: 0 8px;
 }
 
-/* Updated Chat History Styles */
+/* Chat History Styles */
 .history-item {
-    padding: 12px;
+    position: relative;
+    padding: 12px 36px 12px 12px;
     margin: 4px 0;
     border-radius: 6px;
     cursor: pointer;
@@ -96,6 +98,35 @@ body {
 .history-item.active {
     background-color: var(--message-bg);
     font-weight: 500;
+}
+
+.delete-session-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.2s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+}
+
+.history-item:hover .delete-session-btn {
+    opacity: 0.6;
+}
+
+.delete-session-btn:hover {
+    opacity: 1 !important;
+    color: var(--error-color);
+}
+
+.session-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar-footer {
@@ -181,12 +212,57 @@ body {
     height: 60px;
 }
 
-.chat-title {
+/* Chat title editing styles */
+.chat-title-container {
+    position: relative;
+    flex-grow: 1;
+    margin: 0 20px;
+    text-align: center;
+}
+
+.chat-title-editable {
+    display: inline-block;
     font-size: 16px;
     font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: text;
+    max-width: 500px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--text-color);
+    background-color: transparent;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.chat-title-editable:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.chat-title-editable:focus {
+    outline: none;
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    box-shadow: 0 0 0 2px var(--edit-highlight);
+}
+
+.chat-title-edit-instruction {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    margin-top: 4px;
+}
+
+.chat-title-container:hover .chat-title-edit-instruction {
+    opacity: 1;
 }
 
 .sidebar-toggle {
@@ -572,8 +648,21 @@ input[type="text"]:focus {
     }
 
     .history-item {
-        padding: 10px;
+        padding: 10px 36px 10px 10px;
         font-size: 13px;
+    }
+
+    .chat-title-container {
+        margin: 0 10px;
+    }
+
+    .chat-title-editable {
+        max-width: 200px;
+        font-size: 14px;
+    }
+
+    .chat-title-edit-instruction {
+        display: none;
     }
     
     .error-message {

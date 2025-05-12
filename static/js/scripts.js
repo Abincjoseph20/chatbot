@@ -32,6 +32,7 @@ const speakerBtn = document.getElementById('speaker-btn');
 const openSidebarBtn = document.getElementById('open-sidebar');
 const closeSidebarBtn = document.getElementById('close-sidebar');
 const userProfile = document.querySelector('.user-profile');
+const chatTitle = document.querySelector('.chat-title');
 
 // Speech recognition and synthesis
 let recognition;
@@ -78,6 +79,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!isSynthesisSupported) {
         speakerBtn.style.display = 'none';
+    }
+
+    // Initialize session title editing if chat title exists
+    if (chatTitle) {
+        setupChatTitleEditing();
     }
 });
 
@@ -134,9 +140,24 @@ async function loadSessions() {
             const sessionItem = document.createElement('div');
             sessionItem.className = `history-item ${session.id === activeSessionId ? 'active' : ''}`;
             sessionItem.dataset.sessionId = session.id;
-            sessionItem.textContent = session.title;
+            
+            // Create session item with title and delete button
+            sessionItem.innerHTML = `
+                <div class="session-title">${session.title}</div>
+                <button class="delete-session-btn" data-session-id="${session.id}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            `;
+            
             sessionItem.addEventListener('click', handleSessionClick);
             historyContainer.appendChild(sessionItem);
+            
+            // Initialize delete button for this session
+            const deleteBtn = sessionItem.querySelector('.delete-session-btn');
+            deleteBtn.addEventListener('click', handleDeleteSession);
         });
     } catch (error) {
         showError('Failed to load chat history');
@@ -144,7 +165,12 @@ async function loadSessions() {
 }
 
 // Handle session click
-async function handleSessionClick() {
+async function handleSessionClick(e) {
+    // Don't switch sessions if clicking on delete button or title (for editing)
+    if (e.target.closest('.delete-session-btn') || e.target.classList.contains('session-title')) {
+        return;
+    }
+    
     const sessionId = this.dataset.sessionId;
     activeSessionId = sessionId;
     activeSessionIdInput.value = sessionId;
@@ -154,6 +180,115 @@ async function handleSessionClick() {
         item.classList.remove('active');
     });
     this.classList.add('active');
+    
+    // Update chat title with session title
+    const sessionTitle = this.querySelector('.session-title').textContent;
+    if (chatTitle) {
+        chatTitle.textContent = sessionTitle;
+        chatTitle.dataset.sessionId = sessionId;
+    }
+    
+    // Close sidebar on mobile
+    if (window.innerWidth <= 768) {
+        sidebar.classList.remove('visible');
+    }
+}
+
+// Handle session deletion
+function handleDeleteSession(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const sessionId = this.dataset.sessionId;
+    const sessionItem = this.closest('.history-item');
+    const isActiveSession = sessionItem.classList.contains('active');
+
+    if (confirm('Are you sure you want to delete this chat session?')) {
+        fetch(`/delete-session/${sessionId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                sessionItem.remove();
+                
+                // If deleted active session, redirect to new session
+                if (isActiveSession) {
+                    window.location.href = '/new-session/';
+                }
+            } else {
+                alert('Error deleting session: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the session.');
+        });
+    }
+}
+
+// Setup chat title editing
+function setupChatTitleEditing() {
+    let originalTitle = chatTitle.textContent;
+    
+    chatTitle.addEventListener('click', () => {
+        originalTitle = chatTitle.textContent;
+        chatTitle.contentEditable = true;
+        chatTitle.focus();
+    });
+
+    chatTitle.addEventListener('blur', () => {
+        chatTitle.contentEditable = false;
+        const newTitle = chatTitle.textContent.trim();
+        const sessionId = chatTitle.dataset.sessionId;
+        
+        if (newTitle && newTitle !== originalTitle) {
+            updateSessionTitle(sessionId, newTitle);
+        } else {
+            chatTitle.textContent = originalTitle;
+        }
+    });
+
+    chatTitle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            chatTitle.blur();
+        }
+    });
+}
+
+// Update session title
+function updateSessionTitle(sessionId, newTitle) {
+    const formData = new FormData();
+    formData.append('title', newTitle);
+    
+    fetch(`/update-session/${sessionId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update title in sidebar
+            const sidebarItem = document.querySelector(`.history-item[data-session-id="${sessionId}"] .session-title`);
+            if (sidebarItem) {
+                sidebarItem.textContent = data.new_title;
+            }
+        } else {
+            alert('Error updating title: ' + (data.message || 'Unknown error'));
+            chatTitle.textContent = originalTitle;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        chatTitle.textContent = originalTitle;
+    });
 }
 
 // Load messages for a session
@@ -259,9 +394,12 @@ chatForm.addEventListener('submit', async (e) => {
 
         // Update session title if changed
         if (data.session_title) {
-            const activeSessionItem = document.querySelector(`.history-item[data-session-id="${activeSessionId}"]`);
+            const activeSessionItem = document.querySelector(`.history-item[data-session-id="${activeSessionId}"] .session-title`);
             if (activeSessionItem) {
                 activeSessionItem.textContent = data.session_title;
+            }
+            if (chatTitle) {
+                chatTitle.textContent = data.session_title;
             }
         }
 
